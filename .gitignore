@@ -1,0 +1,8 @@
+
+Test.vcxproj
+*.filters
+*.tlog
+*.idb
+*.pdb
+*.obj
+*.log
