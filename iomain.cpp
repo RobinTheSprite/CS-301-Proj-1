@@ -21,6 +21,17 @@ void microsoftWhy()
 	fscanf(nonsense, "%i", &moreNonsense);
 }
 
+void printStrings(FILE * fptr)
+{
+	while (!feof(fptr))
+	{
+		char str[3];
+		#pragma warning(suppress : 4996)
+		fscanf(fptr, "%s", str);
+		puts(str);
+	}
+}
+
 int main()
 {
 	FILE * fptr = fopenASM("strings.txt", "r");
@@ -28,6 +39,7 @@ int main()
 
 	std::cout << "A string from a text file: ";
 	readStrings(fptr);
+	//printStrings(fptr);
 
 	std::cout << std::endl;
 	std::cout << "A string printed from a series of bytes in a binary file: ";
