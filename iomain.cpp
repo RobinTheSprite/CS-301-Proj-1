@@ -11,7 +11,7 @@ extern "C" FILE * fopenASM(const char * filename, const char * mode);
 extern "C" void fcloseASM(FILE * fptr);
 extern "C" void readStrings(FILE * fptr);
 extern "C" void printfASM(char * string);
-extern "C" int spellItOut(FILE * bptr);
+extern "C" void spellItOut(FILE * bptr);
 
 void microsoftWhy()
 {
@@ -19,17 +19,8 @@ void microsoftWhy()
 	int moreNonsense = 0;
 	#pragma warning(suppress : 4996)
 	fscanf(nonsense, "%i", &moreNonsense);
-}
-
-void printStrings(FILE * fptr)
-{
-	while (!feof(fptr))
-	{
-		char str[3];
-		#pragma warning(suppress : 4996)
-		fscanf(fptr, "%s", str);
-		puts(str);
-	}
+	char * extraStupid = "No, really";
+	printf("AAAAAGGH: %s", extraStupid);
 }
 
 int main()
@@ -39,9 +30,8 @@ int main()
 
 	std::cout << "A string from a text file: ";
 	readStrings(fptr);
-	//printStrings(fptr);
-
 	std::cout << std::endl;
+	
 	std::cout << "A string printed from a series of bytes in a binary file: ";
 	spellItOut(bptr);
 	std::cout << std::endl;

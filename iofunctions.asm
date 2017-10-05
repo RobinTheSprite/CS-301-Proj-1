@@ -15,12 +15,10 @@ global spellItOut
 extern fopen
 extern fclose
 extern fscanf
-extern puts
 extern putchar
+extern printf
 extern fread
-extern fwrite
 extern feof
-extern ftell
 ;------------------------------------------------------------;
 
 ;Functions --------------------------------------------------;
@@ -33,11 +31,11 @@ fopenASM:
 	add rsp,40
 	ret
 
-;printASM	
-;NASM wrapper for C function puts. Prints a string to the screen.
-putsASM:		
+;printfASM	
+;NASM wrapper for C function printf. Prints stuff to the screen.
+printfASM:		
 	sub rsp,40
-	call puts
+	call printf
 	add rsp,40
 	ret
 
@@ -50,21 +48,11 @@ fcloseASM:
 	ret
 
 ;readStrings
-;Reads the first string in from a .txt file. All the extra gubbins that you see here
-;is an attempt to loop the function and get every string out of the file, but 
-;that is WIP for now, so the loop is commented out.
+;Reads strings out of a text file and prints them to the screen.
 readStrings:	
 	push rsi	
 	mov rsi,rcx
 	readLoop:
-		mov rcx,rsi
-		mov rdx, inputForFscanf
-		mov r8,readString
-
-		sub rsp,40
-		call fscanf
-		add rsp,40
-
 		mov rcx,rsi
 		sub rsp,40
 		call feof
@@ -72,16 +60,20 @@ readStrings:
 		cmp rax,0
 		jne readStringsEnd
 
-		mov rcx,readString
+		mov rcx,rsi
+		mov rdx, stringFormat
+		mov r8,stringInput
+
 		sub rsp,40
-		call putsASM
+		call fscanf
 		add rsp,40
 
-		;mov rcx,rsi
-		;ub rsp,40
-		;call ftell
-		;add rsp,40
-		;mov rsi,rax
+		mov rdx,stringInput
+		mov rcx, stringFormat
+		sub rsp,40
+		call printfASM
+		add rsp,40
+
 	jmp readLoop
 
 	readStringsEnd:
@@ -119,16 +111,16 @@ spellItOut:
 
 	spellItOutEnd:
 		pop rdi
-		mov rax,0
 		ret
-;end spellItOut --------------------------------------------;
+;end spellItOut ---------------------------------------------;
 
 ;Stored Data ------------------------------------------------;
 
 section .data
-readString:
-	db '',`\n\0`
-inputForFscanf:
-	db '%s',0
+stringInput:
+	times 1000 db 'x'
+	db ` \0`
+stringFormat:
+	db '%s ',0
 currentChar:
 	db 0
