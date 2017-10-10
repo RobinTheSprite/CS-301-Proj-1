@@ -28,24 +28,28 @@ void microsoftWhy()
 int main()
 {
 	FILE * fptr = fopenASM("strings.txt", "r");
-	FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
-
 	std::cout << "A string from a text file: ";
 	readStrings(fptr);
 	std::cout << std::endl;
+	fcloseASM(fptr);
 	
+	FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
 	std::cout << "A string printed from a series of bytes in a binary file: ";
 	spellItOut(bptr);
 	std::cout << std::endl;
 	std::cout << std::endl;
+	fcloseASM(bptr);
 
 	FILE * fptrWrite = fopenASM("text_output.txt", "w");
 
 	writeToText(fptrWrite);
 
 	fcloseASM(fptrWrite);
-	fcloseASM(bptr);
-	fcloseASM(fptr);
+
+
+	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
+
+	fcloseASM(bptrWrite);
 
 	std::cout << "Press ENTER to exit" << std::endl;
 	while (std::cin.get() != '\n')

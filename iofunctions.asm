@@ -20,6 +20,7 @@ extern fprintf
 extern putchar
 extern printf
 extern fread
+extern fwrite
 extern feof
 ;------------------------------------------------------------;
 
@@ -57,7 +58,7 @@ fcloseASM:
 readStrings:	
 	push rsi	
 	mov rsi,rcx
-	readLoop:
+	readTextLoop:
 		mov rcx,rsi
 		sub rsp,40
 		call feof
@@ -66,9 +67,8 @@ readStrings:
 		jne readStringsEnd
 
 		mov rcx,rsi
-		mov rdx, stringFormat
+		mov rdx,stringFormat
 		mov r8,stringToRead
-
 		sub rsp,40
 		call fscanf
 		add rsp,40
@@ -76,10 +76,10 @@ readStrings:
 		mov rdx,stringToRead
 		mov rcx, stringFormat
 		sub rsp,40
-		call printfASM
+		;call printfASM
 		add rsp,40
 
-	jmp readLoop
+	jmp readTextLoop
 
 	readStringsEnd:
 		pop rsi
@@ -93,7 +93,7 @@ spellItOut:
 	push rsi
 	mov rdi,rcx
 	mov rsi,0
-	binLoop:
+	readBinLoop:
 		mov r9,rdi
 		mov r8,1
 		mov rdx,1
@@ -110,13 +110,13 @@ spellItOut:
 		jne spellItOutEnd
 
 		mov rcx,[currentChar]
-		mov [stringToWrite+1*rsi], rcx
+		mov [stringToWrite+rsi], rcx
 		sub rsp,40
 		call putchar
 		add rsp,40
 		add rsi,1
 
-	jmp binLoop
+	jmp readBinLoop
 
 	spellItOutEnd:
 		pop rsi
@@ -135,11 +135,30 @@ writeToText:
 	ret
 ;end writeToText --------------------------------------------;
 
+writeToBin:
+	push rdi
+	push rsi
+	mov rdi,rcx
+	mov rsi,1
+	writeBinLoop:
+		mov r9,rdi
+		mov r8,1
+		mov rdx,1
+		mov rcx,[stringToRead + rsi]
+		sub rsp,40
+		call fwrite
+		add rsp,40
+
+	jmp writeBinLoop
+
+	ret
+;end writeToBin ---------------------------------------------;
+
 ;Stored Data ------------------------------------------------;
 
 section .data
 stringToRead:
-	times 1000 db 'x'
+	times 500 db ''
 	db ` \0`
 stringFormat:
 	db '%s ',0
