@@ -12,6 +12,7 @@ extern "C" void fcloseASM(FILE * fptr);
 extern "C" void readStrings(FILE * fptr);
 extern "C" void printfASM(char * string);
 extern "C" void spellItOut(FILE * bptr);
+extern "C" void writeToText(FILE * fptr);
 
 void microsoftWhy()
 {
@@ -21,6 +22,7 @@ void microsoftWhy()
 	fscanf(nonsense, "%i", &moreNonsense);
 	char * extraStupid = "No, really";
 	printf("AAAAAGGH: %s", extraStupid);
+	fprintf(nonsense, "%i", moreNonsense);
 }
 
 int main()
@@ -37,6 +39,11 @@ int main()
 	std::cout << std::endl;
 	std::cout << std::endl;
 
+	FILE * fptrWrite = fopenASM("text_output.txt", "w");
+
+	writeToText(fptrWrite);
+
+	fcloseASM(fptrWrite);
 	fcloseASM(bptr);
 	fcloseASM(fptr);
 

@@ -9,12 +9,14 @@ section .text
 global fopenASM
 global fcloseASM
 global readStrings
-global printfASM
+global writeToText
 global spellItOut
+global printfASM
 
 extern fopen
 extern fclose
 extern fscanf
+extern fprintf
 extern putchar
 extern printf
 extern fread
@@ -30,6 +32,7 @@ fopenASM:
 	call fopen
 	add rsp,40
 	ret
+;end fopenASM -----------------------------------------------;
 
 ;printfASM	
 ;NASM wrapper for C function printf. Prints stuff to the screen.
@@ -38,6 +41,7 @@ printfASM:
 	call printf
 	add rsp,40
 	ret
+;end printfASM ----------------------------------------------;
 
 ;fcloseASM
 ;NASM wrapper for C function fclose. Closes a file when given a file pointer.
@@ -46,6 +50,7 @@ fcloseASM:
 	call fclose
 	add rsp,40
 	ret
+;end fcloseASM ----------------------------------------------;
 
 ;readStrings
 ;Reads strings out of a text file and prints them to the screen.
@@ -62,13 +67,13 @@ readStrings:
 
 		mov rcx,rsi
 		mov rdx, stringFormat
-		mov r8,stringInput
+		mov r8,stringToRead
 
 		sub rsp,40
 		call fscanf
 		add rsp,40
 
-		mov rdx,stringInput
+		mov rdx,stringToRead
 		mov rcx, stringFormat
 		sub rsp,40
 		call printfASM
@@ -82,10 +87,12 @@ readStrings:
 ;end readStrings --------------------------------------------;
 
 ;spellItOut
-;Reads hex bytes from a binary file, converts each byte into a character, and prints to the screen.
+;Reads bytes from a binary file, converts each byte into a character, and prints to the screen.
 spellItOut:			
-	push rdi		
+	push rdi
+	push rsi
 	mov rdi,rcx
+	mov rsi,0
 	binLoop:
 		mov r9,rdi
 		mov r8,1
@@ -103,24 +110,41 @@ spellItOut:
 		jne spellItOutEnd
 
 		mov rcx,[currentChar]
+		mov [stringToWrite+1*rsi], rcx
 		sub rsp,40
 		call putchar
 		add rsp,40
+		add rsi,1
 
 	jmp binLoop
 
 	spellItOutEnd:
+		pop rsi
 		pop rdi
 		ret
 ;end spellItOut ---------------------------------------------;
 
+;writeToText
+;Reads a string from a stored location in memory and prints it to a text file.
+writeToText:
+	mov rdx,stringFormat
+	mov r8,stringToWrite
+	sub rsp,40
+	call fprintf
+	add rsp,40
+	ret
+;end writeToText --------------------------------------------;
+
 ;Stored Data ------------------------------------------------;
 
 section .data
-stringInput:
+stringToRead:
 	times 1000 db 'x'
 	db ` \0`
 stringFormat:
 	db '%s ',0
 currentChar:
 	db 0
+stringToWrite:
+	times 100 db ''
+	db `\0`
