@@ -13,6 +13,7 @@ extern "C" void readStrings(FILE * fptr);
 extern "C" void printfASM(char * string);
 extern "C" void spellItOut(FILE * bptr);
 extern "C" void writeToText(FILE * fptr);
+extern "C" void writeToBin(FILE * bptr);
 
 void microsoftWhy()
 {
@@ -40,6 +41,7 @@ int main()
 	std::cout << std::endl;
 	fcloseASM(bptr);
 
+
 	FILE * fptrWrite = fopenASM("text_output.txt", "w");
 
 	writeToText(fptrWrite);
@@ -48,6 +50,8 @@ int main()
 
 
 	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
+
+	writeToBin(bptrWrite);
 
 	fcloseASM(bptrWrite);
 

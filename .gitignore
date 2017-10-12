@@ -6,3 +6,7 @@ Test.vcxproj
 *.pdb
 *.obj
 *.log
+bin_output.bin
+text_output.txt
+text_output.txt
+text_output.txt

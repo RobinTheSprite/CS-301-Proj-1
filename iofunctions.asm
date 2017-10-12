@@ -8,10 +8,11 @@ section .text
 ;Getting everything in the right scope ----------------------;
 global fopenASM
 global fcloseASM
-global readStrings
-global writeToText
-global spellItOut
 global printfASM
+global readStrings
+global spellItOut
+global writeToText
+global writeToBin
 
 extern fopen
 extern fclose
@@ -56,8 +57,10 @@ fcloseASM:
 ;readStrings
 ;Reads strings out of a text file and prints them to the screen.
 readStrings:	
-	push rsi	
+	push rsi
+	push rdi
 	mov rsi,rcx
+	mov rdi,stringToRead
 	readTextLoop:
 		mov rcx,rsi
 		sub rsp,40
@@ -68,20 +71,22 @@ readStrings:
 
 		mov rcx,rsi
 		mov rdx,stringFormat
-		mov r8,stringToRead
+		mov r8,rdi
 		sub rsp,40
 		call fscanf
 		add rsp,40
 
-		mov rdx,stringToRead
+		mov rdx,rdi
 		mov rcx, stringFormat
 		sub rsp,40
-		;call printfASM
+		call printfASM
 		add rsp,40
 
+		add rdi,64
 	jmp readTextLoop
 
 	readStringsEnd:
+		pop rdi
 		pop rsi
 		ret
 ;end readStrings --------------------------------------------;
@@ -110,7 +115,7 @@ spellItOut:
 		jne spellItOutEnd
 
 		mov rcx,[currentChar]
-		mov [stringToWrite+rsi], rcx
+		mov BYTE[stringToWrite+rsi], cl
 		sub rsp,40
 		call putchar
 		add rsp,40
@@ -138,19 +143,28 @@ writeToText:
 writeToBin:
 	push rdi
 	push rsi
+	push r13
 	mov rdi,rcx
-	mov rsi,1
+	mov rsi,stringToRead
+	mov r13,0
 	writeBinLoop:
 		mov r9,rdi
 		mov r8,1
-		mov rdx,1
-		mov rcx,[stringToRead + rsi]
+		mov rdx,64
+		mov rcx,rsi
+		cmp BYTE[rcx],`\0`
+		je writeToBinEnd
 		sub rsp,40
 		call fwrite
 		add rsp,40
-
+		add rsi,64
+		add r13,1
 	jmp writeBinLoop
 
+writeToBinEnd:
+	pop r13
+	pop rsi
+	pop rdi
 	ret
 ;end writeToBin ---------------------------------------------;
 
@@ -158,12 +172,10 @@ writeToBin:
 
 section .data
 stringToRead:
-	times 500 db ''
-	db ` \0`
+	times 1000 db `\0`
 stringFormat:
 	db '%s ',0
 currentChar:
 	db 0
 stringToWrite:
-	times 100 db ''
-	db `\0`
+	times 1000 db `\0`
