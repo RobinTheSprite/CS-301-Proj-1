@@ -8,11 +8,12 @@ section .text
 ;Getting everything in the right scope ----------------------;
 global fopenASM
 global fcloseASM
-global printfASM
 global readStrings
 global spellItOut
 global writeToText
 global writeToBin
+global encrypt
+global decrypt
 
 extern fopen
 extern fclose
@@ -23,6 +24,7 @@ extern printf
 extern fread
 extern fwrite
 extern feof
+extern rand
 ;------------------------------------------------------------;
 
 ;Functions --------------------------------------------------;
@@ -140,6 +142,8 @@ writeToText:
 	ret
 ;end writeToText --------------------------------------------;
 
+;writeToBin
+;writes input from a stored location in memory and stores it to a binary file.
 writeToBin:
 	push rdi
 	push rsi
@@ -161,12 +165,57 @@ writeToBin:
 		add r13,1
 	jmp writeBinLoop
 
-writeToBinEnd:
-	pop r13
-	pop rsi
-	pop rdi
-	ret
+	writeToBinEnd:
+		pop r13
+		pop rsi
+		pop rdi
+		ret
 ;end writeToBin ---------------------------------------------;
+
+encrypt:
+	push rdi
+	push rsi
+	mov rdi,stringToWrite
+	mov rsi,0
+	rdtsc
+	
+	encryptLoop:
+		cmp BYTE[rdi],`\0`
+		je encryptEnd
+		xor BYTE[rdi],al
+		add rdi,1
+		add rsi,1
+	jmp encryptLoop
+
+	encryptEnd:
+		pop rsi
+		pop rdi
+		mov BYTE[key],al
+		mov rax,0
+		ret
+;end encrypt ------------------------------------------------;
+
+decrypt:
+	push rdi
+	push rsi
+	mov rdi,stringToWrite
+	mov rsi,0
+	mov al,BYTE[key]
+
+	decryptLoop:
+		cmp BYTE[rdi],`\0`
+		je decryptEnd
+		xor BYTE[rdi],al
+		add rdi,1
+		add rsi,1
+	jmp decryptLoop
+
+	decryptEnd:
+		pop rsi
+		pop rdi
+		mov BYTE[key],al
+		mov rax,0
+		ret
 
 ;Stored Data ------------------------------------------------;
 
@@ -175,7 +224,11 @@ stringToRead:
 	times 1000 db `\0`
 stringFormat:
 	db '%s ',0
+intFormat:
+	db '%i ',0
 currentChar:
 	db 0
 stringToWrite:
 	times 1000 db `\0`
+key:
+	db 0
