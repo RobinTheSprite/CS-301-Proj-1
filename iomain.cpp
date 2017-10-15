@@ -11,13 +11,14 @@ using std::endl;
 
 extern "C" FILE * fopenASM(const char * filename, const char * mode);
 extern "C" void fcloseASM(FILE * fptr);
-extern "C" void readStrings(FILE * fptr);
-//extern "C" void printfASM(char * string);
+extern "C" void readFromText(FILE * fptr);
 extern "C" void spellItOut(FILE * bptr);
 extern "C" void writeToText(FILE * fptr);
 extern "C" void writeToBin(FILE * bptr);
-extern "C" void encrypt();
-extern "C" void decrypt();
+extern "C" void encryptTextfile();
+extern "C" void decryptTextfile();
+extern "C" void encryptBinfile();
+extern "C" void decryptBinfile();
 
 void microsoftWhy()
 {
@@ -34,7 +35,7 @@ int main()
 {
 	FILE * fptr = fopenASM("strings.txt", "r");
 	std::cout << "A string from a text file: ";
-	readStrings(fptr);
+	readFromText(fptr);
 	std::cout << std::endl;
 	std::cout << std::endl;
 	fcloseASM(fptr);
@@ -46,13 +47,15 @@ int main()
 	std::cout << std::endl;
 	fcloseASM(bptr);
 	
-	encrypt();
-	//decrypt();
+	encryptTextfile();
+	decryptTextfile();
+	//encryptBinfile();
+	//decryptBinfile();
+	
 	
 	FILE * fptrWrite = fopenASM("text_output.txt", "w");
 	writeToText(fptrWrite);
 	fcloseASM(fptrWrite);
-	
 	
 	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
 	writeToBin(bptrWrite);

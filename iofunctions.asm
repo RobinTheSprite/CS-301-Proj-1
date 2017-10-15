@@ -8,23 +8,27 @@ section .text
 ;Getting everything in the right scope ----------------------;
 global fopenASM
 global fcloseASM
-global readStrings
+global readFromText
 global spellItOut
 global writeToText
 global writeToBin
-global encrypt
-global decrypt
+global encryptTextfile
+global decryptTextfile
+global encryptBinfile
+global decryptBinfile
 
 extern fopen
 extern fclose
 extern fscanf
 extern fprintf
-extern putchar
-extern printf
 extern fread
 extern fwrite
 extern feof
+extern fgetc
+extern putchar
+extern printf
 extern rand
+extern srand
 ;------------------------------------------------------------;
 
 ;Functions --------------------------------------------------;
@@ -56,42 +60,50 @@ fcloseASM:
 	ret
 ;end fcloseASM ----------------------------------------------;
 
-;readStrings
+fwriteASM:
+	sub rsp,40
+	call fwrite
+	add rsp,40
+	ret
+;end fwriteASM ----------------------------------------------;
+
+;readFromText
 ;Reads strings out of a text file and prints them to the screen.
-readStrings:	
+readFromText:	
 	push rsi
 	push rdi
-	mov rsi,rcx
-	mov rdi,stringToRead
+	mov rsi,rcx				;rsi = file pointer
+	mov rdi,stringFromText	;rdi = pointer to variable
 	readTextLoop:
 		mov rcx,rsi
 		sub rsp,40
 		call feof
 		add rsp,40
 		cmp rax,0
-		jne readStringsEnd
+		jne readFromTextEnd
 
 		mov rcx,rsi
-		mov rdx,stringFormat
-		mov r8,rdi
-		sub rsp,40
-		call fscanf
-		add rsp,40
+		call fgetc
+		mov [rdi],rax
+		add rdi,1
 
-		mov rdx,rdi
-		mov rcx, stringFormat
-		sub rsp,40
-		call printfASM
-		add rsp,40
-
-		add rdi,64
+		mov rcx, rax
+		call putchar
 	jmp readTextLoop
 
-	readStringsEnd:
+	readFromTextEnd:
+		mov BYTE[rdi],0
+		add rdi,1
+		mov BYTE[rdi],0
+		add rdi,1
+		mov BYTE[rdi],0
+		sub rdi,3
+		mov BYTE[rdi],0
+		
 		pop rdi
 		pop rsi
 		ret
-;end readStrings --------------------------------------------;
+;end readFromText --------------------------------------------;
 
 ;spellItOut
 ;Reads bytes from a binary file, converts each byte into a character, and prints to the screen.
@@ -117,7 +129,7 @@ spellItOut:
 		jne spellItOutEnd
 
 		mov rcx,[currentChar]
-		mov BYTE[stringToWrite+rsi], cl
+		mov [stringFromBin+rsi], cl
 		sub rsp,40
 		call putchar
 		add rsp,40
@@ -135,7 +147,7 @@ spellItOut:
 ;Reads a string from a stored location in memory and prints it to a text file.
 writeToText:
 	mov rdx,stringFormat
-	mov r8,stringToWrite
+	mov r8,stringFromBin
 	sub rsp,40
 	call fprintf
 	add rsp,40
@@ -149,19 +161,17 @@ writeToBin:
 	push rsi
 	push r13
 	mov rdi,rcx
-	mov rsi,stringToRead
+	mov rsi,stringFromText
 	mov r13,0
 	writeBinLoop:
 		mov r9,rdi
 		mov r8,1
-		mov rdx,64
+		mov rdx,1
 		mov rcx,rsi
-		cmp BYTE[rcx],`\0`
+		cmp r13,1024
 		je writeToBinEnd
-		sub rsp,40
-		call fwrite
-		add rsp,40
-		add rsi,64
+		call fwriteASM
+		add rsi,1
 		add r13,1
 	jmp writeBinLoop
 
@@ -172,63 +182,148 @@ writeToBin:
 		ret
 ;end writeToBin ---------------------------------------------;
 
-encrypt:
+encryptTextfile:
 	push rdi
 	push rsi
-	mov rdi,stringToWrite
+	mov rdi,stringFromBin
+	mov rsi,0
+	rdtsc
+	mov rcx,rax
+	call srand
+	call rand
+	
+	encryptTextLoop:
+		cmp BYTE[rdi],`\0`
+		je next
+		xor [rdi],al
+		add rdi,1
+		add rsi,1
+	jmp encryptTextLoop
+
+	next:
+		mov [textKey],al
+		mov QWORD[endOfMessage],rsi
+		mov rdx,1024
+		imul rsi,4
+		sub rdx,rsi
+		mov rsi,rdx
+
+		garbage:
+		cmp rsi,0
+		je encryptTextEnd
+		rdtsc
+		mov rcx,rax
+		call srand
+		call rand
+		xor BYTE[rdi],al
+		add rdi,1
+		sub rsi,1
+		jmp garbage
+
+	encryptTextEnd:
+		pop rsi
+		pop rdi
+		mov rax,0
+		ret
+;end encryptTextfile ----------------------------------------;
+
+decryptTextfile:
+	push rdi
+	push rsi
+	mov rdi,stringFromBin
+	mov rsi,0
+	mov al,[textKey]
+
+	decryptTextLoop:
+		cmp rsi,[endOfMessage]
+		je nexxt
+		xor [rdi],al
+		add rdi,1
+		add rsi,1
+	jmp decryptTextLoop
+
+	nexxt:
+		mov [textKey],al
+		mov QWORD[endOfMessage],rsi
+		mov rdx,1024
+		imul rsi,4
+		sub rdx,rsi
+		mov rsi,rdx
+
+		zero:
+		cmp rsi,0
+		je encryptTextEnd
+		mov BYTE[rdi],0
+		add rdi,1
+		sub rsi,1
+		jmp zero
+
+	decryptTextEnd:
+		pop rsi
+		pop rdi
+		mov rax,0
+		ret
+;end decryptTextfile ---------------------------------------;
+
+encryptBinfile:
+	push rdi
+	push rsi
+	mov rdi,stringFromText
 	mov rsi,0
 	rdtsc
 	
-	encryptLoop:
-		cmp BYTE[rdi],`\0`
-		je encryptEnd
+	encryptBinLoop:
+		cmp rsi,1024
+		je encryptBinEnd
 		xor BYTE[rdi],al
 		add rdi,1
 		add rsi,1
-	jmp encryptLoop
+	jmp encryptBinLoop
 
-	encryptEnd:
+	encryptBinEnd:
 		pop rsi
 		pop rdi
-		mov BYTE[key],al
+		mov [binKey],al
 		mov rax,0
 		ret
-;end encrypt ------------------------------------------------;
+;end encryptBinfile ----------------------------------------;
 
-decrypt:
+decryptBinfile:
 	push rdi
+	mov rdi,stringFromText
 	push rsi
-	mov rdi,stringToWrite
 	mov rsi,0
-	mov al,BYTE[key]
+	mov al,[binKey]
 
-	decryptLoop:
-		cmp BYTE[rdi],`\0`
-		je decryptEnd
-		xor BYTE[rdi],al
+	decryptBinLoop:
+		cmp rsi,1024
+		je decryptBinEnd
+		xor [rdi],al
 		add rdi,1
 		add rsi,1
-	jmp decryptLoop
+	jmp decryptBinLoop
 
-	decryptEnd:
+	decryptBinEnd:
 		pop rsi
 		pop rdi
-		mov BYTE[key],al
 		mov rax,0
 		ret
-
 ;Stored Data ------------------------------------------------;
 
 section .data
-stringToRead:
-	times 1000 db `\0`
+stringFromText:
+	times 1024 db `\0`
+stringFromBin:
+	times 1024 db `\0`
 stringFormat:
 	db '%s ',0
 intFormat:
 	db '%i ',0
 currentChar:
 	db 0
-stringToWrite:
-	times 1000 db `\0`
-key:
+textKey:
+	db 0
+endOfMessage:
+	dq 0
+binKey:
 	db 0

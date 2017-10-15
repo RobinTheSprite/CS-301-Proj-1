@@ -19,7 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="iofunctions.asm" />
+    <CustomBuild Include="iofunctions.asm">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c:\nasm\nasm -f win64 iofunctions.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">iofunctions.obj</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\nasm\nasm -f win64 iofunctions.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">iofunctions.obj</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="iomain.cpp" />
