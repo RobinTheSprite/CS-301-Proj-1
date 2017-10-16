@@ -12,7 +12,7 @@ using std::endl;
 extern "C" FILE * fopenASM(const char * filename, const char * mode);
 extern "C" void fcloseASM(FILE * fptr);
 extern "C" void readFromText(FILE * fptr);
-extern "C" void spellItOut(FILE * bptr);
+extern "C" void readFromBin(FILE * bptr);
 extern "C" void writeToText(FILE * fptr);
 extern "C" void writeToBin(FILE * bptr);
 extern "C" void encryptTextfile();
@@ -34,24 +34,23 @@ void microsoftWhy()
 int main()
 {
 	FILE * fptr = fopenASM("strings.txt", "r");
-	std::cout << "A string from a text file: ";
+	std::cout << "Secret Message #1: ";
 	readFromText(fptr);
 	std::cout << std::endl;
 	std::cout << std::endl;
 	fcloseASM(fptr);
 
 	FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
-	std::cout << "A string printed from a series of bytes in a binary file: ";
-	spellItOut(bptr);
+	std::cout << "Secret Message #2: ";
+	readFromBin(bptr);
 	std::cout << std::endl;
 	std::cout << std::endl;
 	fcloseASM(bptr);
 	
 	encryptTextfile();
 	decryptTextfile();
-	//encryptBinfile();
+	encryptBinfile();
 	//decryptBinfile();
-	
 	
 	FILE * fptrWrite = fopenASM("text_output.txt", "w");
 	writeToText(fptrWrite);

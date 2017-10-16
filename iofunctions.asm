@@ -9,7 +9,7 @@ section .text
 global fopenASM
 global fcloseASM
 global readFromText
-global spellItOut
+global readFromBin
 global writeToText
 global writeToBin
 global encryptTextfile
@@ -60,6 +60,8 @@ fcloseASM:
 	ret
 ;end fcloseASM ----------------------------------------------;
 
+;fwrite
+;NASM wrapper for C function fwrite. Writes data to a binary file.
 fwriteASM:
 	sub rsp,40
 	call fwrite
@@ -92,6 +94,7 @@ readFromText:
 	jmp readTextLoop
 
 	readFromTextEnd:
+		;Manually clears the end of file integer out of memory 
 		mov BYTE[rdi],0
 		add rdi,1
 		mov BYTE[rdi],0
@@ -105,9 +108,9 @@ readFromText:
 		ret
 ;end readFromText --------------------------------------------;
 
-;spellItOut
+;readFromBin
 ;Reads bytes from a binary file, converts each byte into a character, and prints to the screen.
-spellItOut:			
+readFromBin:			
 	push rdi
 	push rsi
 	mov rdi,rcx
@@ -126,22 +129,22 @@ spellItOut:
 		call feof
 		add rsp,40
 		cmp rax,0
-		jne spellItOutEnd
+		jne readFromBinEnd
 
 		mov rcx,[currentChar]
 		mov [stringFromBin+rsi], cl
+		add rsi,1
 		sub rsp,40
 		call putchar
 		add rsp,40
-		add rsi,1
-
+		
 	jmp readBinLoop
 
-	spellItOutEnd:
+	readFromBinEnd:
 		pop rsi
 		pop rdi
 		ret
-;end spellItOut ---------------------------------------------;
+;end readFromBin ---------------------------------------------;
 
 ;writeToText
 ;Reads a string from a stored location in memory and prints it to a text file.
@@ -182,6 +185,8 @@ writeToBin:
 		ret
 ;end writeToBin ---------------------------------------------;
 
+;encryptTextfile
+;Takes bytes from a binary file and encrypts them for storage in a text file.
 encryptTextfile:
 	push rdi
 	push rsi
@@ -194,13 +199,13 @@ encryptTextfile:
 	
 	encryptTextLoop:
 		cmp BYTE[rdi],`\0`
-		je next
+		je encryptTextNext
 		xor [rdi],al
 		add rdi,1
 		add rsi,1
 	jmp encryptTextLoop
 
-	next:
+	encryptTextNext:
 		mov [textKey],al
 		mov QWORD[endOfMessage],rsi
 		mov rdx,1024
@@ -208,25 +213,26 @@ encryptTextfile:
 		sub rdx,rsi
 		mov rsi,rdx
 
-		garbage:
-		cmp rsi,0
-		je encryptTextEnd
-		rdtsc
-		mov rcx,rax
-		call srand
-		call rand
-		xor BYTE[rdi],al
-		add rdi,1
-		sub rsi,1
-		jmp garbage
+		garbageText:
+			cmp rsi,0
+			je encryptTextEnd
+			rdtsc
+			mov rcx,rax
+			call srand
+			call rand
+			xor BYTE[rdi],al
+			add rdi,1
+			sub rsi,1
+		jmp garbageText
 
 	encryptTextEnd:
 		pop rsi
 		pop rdi
-		mov rax,0
 		ret
 ;end encryptTextfile ----------------------------------------;
 
+;decryptTextfile
+;Takes bytes from a binary file and decrypts them for storage in a text file.
 decryptTextfile:
 	push rdi
 	push rsi
@@ -236,13 +242,13 @@ decryptTextfile:
 
 	decryptTextLoop:
 		cmp rsi,[endOfMessage]
-		je nexxt
+		je decryptTextNext
 		xor [rdi],al
 		add rdi,1
 		add rsi,1
 	jmp decryptTextLoop
 
-	nexxt:
+	decryptTextNext:
 		mov [textKey],al
 		mov QWORD[endOfMessage],rsi
 		mov rdx,1024
@@ -250,44 +256,68 @@ decryptTextfile:
 		sub rdx,rsi
 		mov rsi,rdx
 
-		zero:
-		cmp rsi,0
-		je encryptTextEnd
-		mov BYTE[rdi],0
-		add rdi,1
-		sub rsi,1
-		jmp zero
+		zeroText:
+			cmp rsi,0
+			je encryptTextEnd
+			mov BYTE[rdi],0
+			add rdi,1
+			sub rsi,1
+		jmp zeroText
 
 	decryptTextEnd:
 		pop rsi
 		pop rdi
-		mov rax,0
 		ret
 ;end decryptTextfile ---------------------------------------;
 
+;encryptBinfile
+;Encrypts bytes from a text file to prepare them for storage in a binary file.
 encryptBinfile:
 	push rdi
 	push rsi
 	mov rdi,stringFromText
 	mov rsi,0
 	rdtsc
+	mov rcx,rax
+	call srand
+	call rand
 	
 	encryptBinLoop:
-		cmp rsi,1024
-		je encryptBinEnd
+		cmp BYTE[rdi],`\0`
+		je encryptBinNext
 		xor BYTE[rdi],al
 		add rdi,1
 		add rsi,1
 	jmp encryptBinLoop
 
+	encryptBinNext:
+		mov [binKey],al
+		mov QWORD[endOfMessage],rsi
+		mov rdx,1024
+		imul rsi,4
+		sub rdx,rsi
+		mov rsi,rdx
+
+		garbageBin:		;Not intentional, but still funny
+			cmp rsi,0
+			je encryptBinEnd
+			rdtsc
+			mov rcx,rax
+			call srand
+			call rand
+			xor BYTE[rdi],al
+			add rdi,1
+			sub rsi,1
+		jmp garbageBin
+		
 	encryptBinEnd:
 		pop rsi
 		pop rdi
-		mov [binKey],al
-		mov rax,0
 		ret
 ;end encryptBinfile ----------------------------------------;
 
+;decryptBinfile
+;Decrypts bytes from a text file to prepare them for storage in a binary file.
 decryptBinfile:
 	push rdi
 	mov rdi,stringFromText
@@ -296,34 +326,58 @@ decryptBinfile:
 	mov al,[binKey]
 
 	decryptBinLoop:
-		cmp rsi,1024
-		je decryptBinEnd
+		cmp rsi,[endOfMessage]
+		je decryptBinNext
 		xor [rdi],al
 		add rdi,1
 		add rsi,1
 	jmp decryptBinLoop
 
+	decryptBinNext:
+		mov [binKey],al
+		mov QWORD[endOfMessage],rsi
+		mov rdx,1024
+		imul rsi,4
+		sub rdx,rsi
+		mov rsi,rdx
+
+		zeroBin:
+		cmp rsi,0
+		je encryptTextEnd
+		mov BYTE[rdi],0
+		add rdi,1
+		sub rsi,1
+		jmp zeroBin
+
 	decryptBinEnd:
 		pop rsi
 		pop rdi
-		mov rax,0
 		ret
 ;Stored Data ------------------------------------------------;
 
 section .data
+
 stringFromText:
 	times 1024 db `\0`
+
 stringFromBin:
 	times 1024 db `\0`
+
 stringFormat:
 	db '%s ',0
+
 intFormat:
 	db '%i ',0
+
 currentChar:
 	db 0
+
 textKey:
 	db 0
-endOfMessage:
-	dq 0
+
 binKey:
 	db 0
+
+endOfMessage:
+	dq 0
+
