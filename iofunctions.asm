@@ -192,21 +192,17 @@ encryptTextfile:
 	push rsi
 	mov rdi,stringFromBin
 	mov rsi,0
-	rdtsc
-	mov rcx,rax
-	call srand
-	call rand
 	
 	encryptTextLoop:
 		cmp BYTE[rdi],`\0`
 		je encryptTextNext
-		xor [rdi],al
+		xor [rdi],cl
 		add rdi,1
 		add rsi,1
 	jmp encryptTextLoop
 
 	encryptTextNext:
-		mov [textKey],al
+		mov [textKey],cl
 		mov QWORD[endOfMessage],rsi
 		mov rdx,1024
 		imul rsi,4

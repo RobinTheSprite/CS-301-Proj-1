@@ -8,6 +8,10 @@ Uses some assembly language to play with text files
 #include <iostream>
 using std::cout;
 using std::endl;
+using std::cin;
+#include <string>
+using std::string;
+using std::getline;
 
 extern "C" FILE * fopenASM(const char * filename, const char * mode);
 extern "C" void fcloseASM(FILE * fptr);
@@ -15,7 +19,7 @@ extern "C" void readFromText(FILE * fptr);
 extern "C" void readFromBin(FILE * bptr);
 extern "C" void writeToText(FILE * fptr);
 extern "C" void writeToBin(FILE * bptr);
-extern "C" void encryptTextfile();
+extern "C" void encryptTextfile(string password);
 extern "C" void decryptTextfile();
 extern "C" void encryptBinfile();
 extern "C" void decryptBinfile();
@@ -47,7 +51,15 @@ int main()
 	std::cout << std::endl;
 	fcloseASM(bptr);
 	
-	encryptTextfile();
+	string line;
+	getline(cin, line);
+	if (!cin)
+	{
+		cout << "Error readling input" << endl;
+		return 1;
+	}
+
+	encryptTextfile(line);
 	decryptTextfile();
 	encryptBinfile();
 	//decryptBinfile();
