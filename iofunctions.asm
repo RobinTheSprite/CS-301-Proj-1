@@ -74,7 +74,7 @@ readFromText:
 	push rdi
 	mov rsi,rcx				
 	mov rdi,strings
-	add rdi,1
+
 	readTextLoop:
 		mov rcx,rsi
 		sub rsp,40
@@ -85,9 +85,8 @@ readFromText:
 
 		mov rcx,rsi
 		call fgetc
-		mov [rdi],rax
+		mov [rdi],al
 		add rdi,1
-		add r13,1
 	jmp readTextLoop
 
 	readFromTextEnd:
@@ -102,6 +101,7 @@ readFromText:
 
 		pop rdi
 		pop rsi
+		mov rax,strings
 		ret
 ;end readFromText --------------------------------------------;
 
@@ -163,7 +163,6 @@ writeToText:
 	
 	mov rdx,stringFormat
 	mov r8,strings
-	add r8,1
 	sub rsp,40
 	call fprintf
 	add rsp,40
@@ -180,7 +179,6 @@ writeToBin:
 	push r13
 	mov rdi,rcx
 	mov rsi,strings
-	add rsi,1
 	mov r13,0
 	writeBinLoop:
 		mov r9,rdi
@@ -225,7 +223,6 @@ encrypt:
 	push rdi
 	push rsi
 	mov rdi,strings
-	add rdi,1
 	mov rsi,0
 	
 	encryptLoop:
@@ -239,17 +236,28 @@ encrypt:
 	jmp encryptLoop
 
 	encryptNext:
-		mov [strings],sil
+		mov r10,rdi
+		moveUp:
+			cmp rdi,strings
+			je storeLength
+			mov r9b,[rdi]
+			mov r9b,[rdi+1]
+			sub rdi,1
+		jmp moveUp
+
+		storeLength:
+			mov rdi,r10
+			mov [strings],sil
 	
 		garbage:
-			cmp rsi,255
+			cmp rsi,1023
 			je encryptEnd
 			rdtsc
 			mov rcx,rax
 			call srand
 			call rand
-			xor [rdi],eax
-			add rdi,4
+			xor [rdi],al
+			add rdi,1
 			add rsi,1
 		jmp garbage
 
@@ -293,6 +301,7 @@ decrypt:
 		jmp zeroBytes
 
 	decryptEnd:
+		mov BYTE[strings],0
 		pop rsi
 		pop rdi
 		ret
@@ -305,6 +314,9 @@ section .data
 
 strings:
 	times 1024 db `\0`
+
+cushion:
+	db `\0`
 
 stringFormat:
 	db '%s ',0
