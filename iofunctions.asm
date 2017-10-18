@@ -12,10 +12,8 @@ global readFromText
 global readFromBin
 global writeToText
 global writeToBin
-global encryptTextfile
-global decryptTextfile
-global encryptBinfile
-global decryptBinfile
+global encrypt
+global decrypt
 
 extern fopen
 extern fclose
@@ -74,8 +72,9 @@ fwriteASM:
 readFromText:	
 	push rsi
 	push rdi
-	mov rsi,rcx				;rsi = file pointer
-	mov rdi,stringFromText	;rdi = pointer to variable
+	mov rsi,rcx				
+	mov rdi,strings
+	add rdi,1
 	readTextLoop:
 		mov rcx,rsi
 		sub rsp,40
@@ -88,9 +87,7 @@ readFromText:
 		call fgetc
 		mov [rdi],rax
 		add rdi,1
-
-		mov rcx, rax
-		call putchar
+		add r13,1
 	jmp readTextLoop
 
 	readFromTextEnd:
@@ -102,7 +99,7 @@ readFromText:
 		mov BYTE[rdi],0
 		sub rdi,3
 		mov BYTE[rdi],0
-		
+
 		pop rdi
 		pop rsi
 		ret
@@ -132,7 +129,7 @@ readFromBin:
 		jne readFromBinEnd
 
 		mov rcx,[currentChar]
-		mov [stringFromBin+rsi], cl
+		mov [strings+rsi], cl
 		add rsi,1
 		sub rsp,40
 		call putchar
@@ -146,14 +143,32 @@ readFromBin:
 		ret
 ;end readFromBin ---------------------------------------------;
 
+clearMemory:
+	push rdi
+	mov rdi,0
+	clearEveryByte:
+		cmp rdi,1024
+		je clearEnd
+		mov BYTE[strings+rdi],0
+		add rdi,1
+	jmp clearEveryByte
+
+	clearEnd:
+		pop rdi
+		ret
+
 ;writeToText
 ;Reads a string from a stored location in memory and prints it to a text file.
 writeToText:
+	
 	mov rdx,stringFormat
-	mov r8,stringFromBin
+	mov r8,strings
+	add r8,1
 	sub rsp,40
 	call fprintf
 	add rsp,40
+	call clearMemory
+	
 	ret
 ;end writeToText --------------------------------------------;
 
@@ -164,7 +179,8 @@ writeToBin:
 	push rsi
 	push r13
 	mov rdi,rcx
-	mov rsi,stringFromText
+	mov rsi,strings
+	add rsi,1
 	mov r13,0
 	writeBinLoop:
 		mov r9,rdi
@@ -182,181 +198,112 @@ writeToBin:
 		pop r13
 		pop rsi
 		pop rdi
+		call clearMemory
 		ret
 ;end writeToBin ---------------------------------------------;
 
-;encryptTextfile
-;Takes bytes from a binary file and encrypts them for storage in a text file.
-encryptTextfile:
+superXOR:
+	mov r8,rcx
+	superLoop:
+		cmp rcx,0
+		je superEnd
+		mov r9,rcx
+		and r9,0xFF
+		xor rdx,r9
+		shr rcx,8
+	jmp superLoop
+
+	superEnd:
+		mov rcx,r8
+		mov rax,0
+		mov rax,rdx
+		ret
+
+;encrypt
+;Takes bytes from a file and encrypts them for storage in another file.
+encrypt:
 	push rdi
 	push rsi
-	mov rdi,stringFromBin
+	mov rdi,strings
+	add rdi,1
 	mov rsi,0
 	
-	encryptTextLoop:
+	encryptLoop:
 		cmp BYTE[rdi],`\0`
-		je encryptTextNext
-		xor [rdi],cl
+		je encryptNext
+		mov dl,[rdi]
+		call superXOR
+		mov [rdi],al
 		add rdi,1
 		add rsi,1
-	jmp encryptTextLoop
+	jmp encryptLoop
 
-	encryptTextNext:
-		mov [textKey],cl
-		mov QWORD[endOfMessage],rsi
-		mov rdx,1024
-		imul rsi,4
-		sub rdx,rsi
-		mov rsi,rdx
-
-		garbageText:
-			cmp rsi,0
-			je encryptTextEnd
+	encryptNext:
+		mov [strings],sil
+	
+		garbage:
+			cmp rsi,255
+			je encryptEnd
 			rdtsc
 			mov rcx,rax
 			call srand
 			call rand
-			xor BYTE[rdi],al
-			add rdi,1
-			sub rsi,1
-		jmp garbageText
+			xor [rdi],eax
+			add rdi,4
+			add rsi,1
+		jmp garbage
 
-	encryptTextEnd:
+	encryptEnd:
 		pop rsi
 		pop rdi
 		ret
-;end encryptTextfile ----------------------------------------;
+;end encrypt ----------------------------------------;
 
-;decryptTextfile
+;decrypt
 ;Takes bytes from a binary file and decrypts them for storage in a text file.
-decryptTextfile:
+decrypt:
 	push rdi
 	push rsi
-	mov rdi,stringFromBin
+	mov rdi,strings
+	add rdi,1
 	mov rsi,0
-	mov al,[textKey]
 
-	decryptTextLoop:
-		cmp rsi,[endOfMessage]
-		je decryptTextNext
-		xor [rdi],al
+	decryptLoop:
+		cmp sil,[strings]
+		je decryptNext
+		mov dl,[rdi]
+		call superXOR
+		mov [rdi],al
 		add rdi,1
 		add rsi,1
-	jmp decryptTextLoop
+	jmp decryptLoop
 
-	decryptTextNext:
-		mov [textKey],al
-		mov QWORD[endOfMessage],rsi
-		mov rdx,1024
-		imul rsi,4
-		sub rdx,rsi
-		mov rsi,rdx
+	decryptNext:
+		mov sil,[strings]
+		add rsi,1
+		mov rdi,strings
+		add rdi,rsi
 
-		zeroText:
-			cmp rsi,0
-			je encryptTextEnd
+		zeroBytes:
+			cmp rsi,1023
+			je decryptEnd
 			mov BYTE[rdi],0
 			add rdi,1
-			sub rsi,1
-		jmp zeroText
+			add rsi,1
+		jmp zeroBytes
 
-	decryptTextEnd:
+	decryptEnd:
 		pop rsi
 		pop rdi
 		ret
-;end decryptTextfile ---------------------------------------;
+;end decrypt ------------------------------------------------;
 
-;encryptBinfile
-;Encrypts bytes from a text file to prepare them for storage in a binary file.
-encryptBinfile:
-	push rdi
-	push rsi
-	mov rdi,stringFromText
-	mov rsi,0
-	rdtsc
-	mov rcx,rax
-	call srand
-	call rand
-	
-	encryptBinLoop:
-		cmp BYTE[rdi],`\0`
-		je encryptBinNext
-		xor BYTE[rdi],al
-		add rdi,1
-		add rsi,1
-	jmp encryptBinLoop
 
-	encryptBinNext:
-		mov [binKey],al
-		mov QWORD[endOfMessage],rsi
-		mov rdx,1024
-		imul rsi,4
-		sub rdx,rsi
-		mov rsi,rdx
-
-		garbageBin:		;Not intentional, but still funny
-			cmp rsi,0
-			je encryptBinEnd
-			rdtsc
-			mov rcx,rax
-			call srand
-			call rand
-			xor BYTE[rdi],al
-			add rdi,1
-			sub rsi,1
-		jmp garbageBin
-		
-	encryptBinEnd:
-		pop rsi
-		pop rdi
-		ret
-;end encryptBinfile ----------------------------------------;
-
-;decryptBinfile
-;Decrypts bytes from a text file to prepare them for storage in a binary file.
-decryptBinfile:
-	push rdi
-	mov rdi,stringFromText
-	push rsi
-	mov rsi,0
-	mov al,[binKey]
-
-	decryptBinLoop:
-		cmp rsi,[endOfMessage]
-		je decryptBinNext
-		xor [rdi],al
-		add rdi,1
-		add rsi,1
-	jmp decryptBinLoop
-
-	decryptBinNext:
-		mov [binKey],al
-		mov QWORD[endOfMessage],rsi
-		mov rdx,1024
-		imul rsi,4
-		sub rdx,rsi
-		mov rsi,rdx
-
-		zeroBin:
-		cmp rsi,0
-		je encryptTextEnd
-		mov BYTE[rdi],0
-		add rdi,1
-		sub rsi,1
-		jmp zeroBin
-
-	decryptBinEnd:
-		pop rsi
-		pop rdi
-		ret
 ;Stored Data ------------------------------------------------;
 
 section .data
 
-stringFromText:
-	times 1024 db `\0`
-
-stringFromBin:
+strings:
 	times 1024 db `\0`
 
 stringFormat:
@@ -365,15 +312,12 @@ stringFormat:
 intFormat:
 	db '%i ',0
 
+hexFormat:
+	db '%x ',0
+
 currentChar:
 	db 0
 
-textKey:
-	db 0
-
-binKey:
-	db 0
-
 endOfMessage:
-	dq 0
+	dd 0
 

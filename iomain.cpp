@@ -13,16 +13,14 @@ using std::cin;
 using std::string;
 using std::getline;
 
-extern "C" FILE * fopenASM(const char * filename, const char * mode);
-extern "C" void fcloseASM(FILE * fptr);
-extern "C" void readFromText(FILE * fptr);
-extern "C" void readFromBin(FILE * bptr);
-extern "C" void writeToText(FILE * fptr);
-extern "C" void writeToBin(FILE * bptr);
-extern "C" void encryptTextfile(string password);
-extern "C" void decryptTextfile();
-extern "C" void encryptBinfile();
-extern "C" void decryptBinfile();
+extern "C" FILE * fopenASM(const char *, const char *);
+extern "C" void fcloseASM(FILE *);
+extern "C" void readFromText(FILE *);
+extern "C" void readFromBin(FILE *);
+extern "C" void writeToText(FILE *);
+extern "C" void writeToBin(FILE *);
+extern "C" void encrypt(int);
+extern "C" void decrypt(int);
 
 void microsoftWhy()
 {
@@ -35,22 +33,21 @@ void microsoftWhy()
 	fprintf(nonsense, "%i", moreNonsense);
 }
 
+int castPasswordToInt(string password)
+{
+	int iPassword = 0;
+
+	for (int i = 0; i != password.size(); ++i)
+	{
+		iPassword += password[i];
+		iPassword = iPassword << 8;
+	}
+	return iPassword;
+}
+
 int main()
 {
-	FILE * fptr = fopenASM("strings.txt", "r");
-	std::cout << "Secret Message #1: ";
-	readFromText(fptr);
-	std::cout << std::endl;
-	std::cout << std::endl;
-	fcloseASM(fptr);
-
-	FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
-	std::cout << "Secret Message #2: ";
-	readFromBin(bptr);
-	std::cout << std::endl;
-	std::cout << std::endl;
-	fcloseASM(bptr);
-	
+	cout << "Password: ";
 	string line;
 	getline(cin, line);
 	if (!cin)
@@ -58,19 +55,35 @@ int main()
 		cout << "Error readling input" << endl;
 		return 1;
 	}
+	cout << endl;
+	//const char * password = line.c_str();
 
-	encryptTextfile(line);
-	decryptTextfile();
-	encryptBinfile();
-	//decryptBinfile();
-	
+	FILE * fptr = fopenASM("strings.txt", "r");
+	readFromText(fptr);
+	std::cout << "Read Text File" << std::endl;
+	std::cout << std::endl;
+	fcloseASM(fptr);
+
+	encrypt(castPasswordToInt(line));
+	decrypt(castPasswordToInt(line));
+
 	FILE * fptrWrite = fopenASM("text_output.txt", "w");
 	writeToText(fptrWrite);
 	fcloseASM(fptrWrite);
-	
-	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
-	writeToBin(bptrWrite);
-	fcloseASM(bptrWrite);
+
+	//FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
+	//std::cout << "Secret Message #2: ";
+	//readFromBin(bptr);
+	//std::cout << std::endl;
+	//std::cout << std::endl;
+	//fcloseASM(bptr);
+	//
+	//encrypt(line);
+	//decrypt();
+	//
+	//FILE * bptrWrite = fopenASM("bin_output.bin", "w");
+	//writeToBin(bptrWrite);
+	//fcloseASM(bptrWrite);
 
 	std::cout << std::endl;
 	std::cout << "Press ENTER to exit" << std::endl;
