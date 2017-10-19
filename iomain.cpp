@@ -2,7 +2,7 @@
 iomain.cpp
 Mark Underwood
 10.2.17
-Uses some assembly language to play with text files
+Uses assembly language to encrypt and decrypt files
 */
 
 #include <iostream>
@@ -16,7 +16,7 @@ using std::getline;
 extern "C" FILE * fopenASM(const char *, const char *);
 extern "C" void fcloseASM(FILE *);
 extern "C" const char * readFromText(FILE *);
-extern "C" void readFromBin(FILE *);
+extern "C" const char * readFromBin(FILE *);
 extern "C" void writeToText(FILE *);
 extern "C" void writeToBin(FILE *);
 extern "C" void encrypt(int);
@@ -47,7 +47,12 @@ int castPasswordToInt(string password)
 
 int main()
 {
-	cout << "Password: ";
+	cout << "The Most Inefficiently Written File Encrypter Ever Made" << endl;
+	cout << endl;
+	cout << "Thanks, NASM, for making me value actual programming languages." << endl;
+	cout << endl;
+
+	cout << "Enter a Password: ";
 	string line;
 	getline(cin, line);
 	if (!cin)
@@ -56,32 +61,47 @@ int main()
 		return 1;
 	}
 	cout << endl;
-	//const char * password = line.c_str();
 
-	//FILE * fptr = fopenASM("strings.txt", "r");
-	//const char * memory = readFromText(fptr);
-	//std::cout << "Read Text File" << std::endl;
-	//std::cout << std::endl;
-	//fcloseASM(fptr);
+	FILE * fptr = fopenASM("encrypted.txt", "r");
+	if (!fptr)
+	{
+		cout << "Error Reading File" << endl;
+	}
+
+	const char * memory = readFromText(fptr);
+	std::cout << "Text File Read" << std::endl;
+	std::cout << std::endl;
+	fcloseASM(fptr);
 
 	//encrypt(castPasswordToInt(line));
-	//decrypt(castPasswordToInt(line));
+	decrypt(castPasswordToInt(line));
 
-	//FILE * fptrWrite = fopenASM("text_output.txt", "w");
-	//writeToText(fptrWrite);
-	//fcloseASM(fptrWrite);
+	FILE * fptrWrite = fopenASM("text_output.txt", "w");
+	if (!fptrWrite)
+	{
+		cout << "Error Reading File" << endl;
+	}
+	writeToText(fptrWrite);
+	fcloseASM(fptrWrite);
 
-	FILE * bptr = fopenASM("strings_in_disguise.bin", "r");
-	std::cout << "Secret Message #2: ";
+	FILE * bptr = fopenASM("encrypted.bin", "r");
+	std::cout << "Bin File Read";
 	readFromBin(bptr);
-	std::cout << std::endl;
+	if (!bptr)
+	{
+		cout << "Error Reading File" << endl;
+	}
 	std::cout << std::endl;
 	fcloseASM(bptr);
-	
-	encrypt(castPasswordToInt(line));
-	//decrypt(castPasswordToInt(line));
+
+	//encrypt(castPasswordToInt(line));
+	decrypt(castPasswordToInt(line));
 	
 	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
+	if (!bptrWrite)
+	{
+		cout << "Error Reading File" << endl;
+	}
 	writeToBin(bptrWrite);
 	fcloseASM(bptrWrite);
 

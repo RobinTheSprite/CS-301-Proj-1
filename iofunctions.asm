@@ -17,13 +17,11 @@ global decrypt
 
 extern fopen
 extern fclose
-extern fscanf
 extern fprintf
 extern fread
 extern fwrite
 extern feof
 extern fgetc
-extern putchar
 extern printf
 extern rand
 extern srand
@@ -73,15 +71,15 @@ readFromText:
 	push rsi
 	push rdi
 	mov rsi,rcx				
-	mov rdi,strings
+	mov rdi,stringsIn
 
-	readTextLoop:
+	readTextLoop:		
 		mov rcx,rsi
 		sub rsp,40
-		call feof
+		call feof			
 		add rsp,40
 		cmp rax,0
-		jne readFromTextEnd
+		jne readFromTextEnd	
 
 		mov rcx,rsi
 		call fgetc
@@ -90,7 +88,7 @@ readFromText:
 	jmp readTextLoop
 
 	readFromTextEnd:
-		;Manually clears the end of file integer out of memory 
+		;Manually clear the end of file integer out of memory 
 		mov BYTE[rdi],0
 		add rdi,1
 		mov BYTE[rdi],0
@@ -101,7 +99,7 @@ readFromText:
 
 		pop rdi
 		pop rsi
-		mov rax,strings
+		mov rax,stringsIn
 		ret
 ;end readFromText --------------------------------------------;
 
@@ -112,44 +110,46 @@ readFromBin:
 	push rsi
 	mov rdi,rcx
 	mov rsi,0
+
 	readBinLoop:
 		mov r9,rdi
 		mov r8,1
 		mov rdx,1
 		mov rcx,currentChar
 		sub rsp,40
-		call fread
+		call fread					
 		add rsp,40
 
 		mov rcx,rdi
 		sub rsp,40
-		call feof
+		call feof				
 		add rsp,40
 		cmp rax,0
-		jne readFromBinEnd
+		jne readFromBinEnd		
 
 		mov rcx,[currentChar]
-		mov [strings+rsi], cl
+		mov [stringsIn + rsi], cl	;Put the byte into memory
 		add rsi,1
-		sub rsp,40
-		call putchar
-		add rsp,40
 		
 	jmp readBinLoop
 
 	readFromBinEnd:
 		pop rsi
 		pop rdi
+		mov rax,stringsIn
 		ret
 ;end readFromBin ---------------------------------------------;
 
+;clearMemory
+;Zeros the memory buffers so they can be reused.
 clearMemory:
 	push rdi
 	mov rdi,0
 	clearEveryByte:
 		cmp rdi,1024
 		je clearEnd
-		mov BYTE[strings+rdi],0
+		mov BYTE[stringsIn + rdi],0				
+		mov BYTE[stringsPlusOne + rdi],0	
 		add rdi,1
 	jmp clearEveryByte
 
@@ -162,7 +162,7 @@ clearMemory:
 writeToText:
 	
 	mov rdx,stringFormat
-	mov r8,strings
+	mov r8,stringsPlusOne
 	sub rsp,40
 	call fprintf
 	add rsp,40
@@ -178,8 +178,9 @@ writeToBin:
 	push rsi
 	push r13
 	mov rdi,rcx
-	mov rsi,strings
+	mov rsi,stringsPlusOne
 	mov r13,0
+
 	writeBinLoop:
 		mov r9,rdi
 		mov r8,1
@@ -200,15 +201,17 @@ writeToBin:
 		ret
 ;end writeToBin ---------------------------------------------;
 
+;superXOR
+;XORs each byte with every character in the password.
 superXOR:
 	mov r8,rcx
 	superLoop:
 		cmp rcx,0
 		je superEnd
 		mov r9,rcx
-		and r9,0xFF
-		xor rdx,r9
-		shr rcx,8
+		and r9,0xFF		;Extract low bits of password
+		xor rdx,r9		
+		shr rcx,8		;Get new byte into lowest position
 	jmp superLoop
 
 	superEnd:
@@ -216,53 +219,38 @@ superXOR:
 		mov rax,0
 		mov rax,rdx
 		ret
+;end superXOR -----------------------------------------------;
 
 ;encrypt
 ;Takes bytes from a file and encrypts them for storage in another file.
 encrypt:
 	push rdi
-	push rsi
-	mov rdi,strings
-	mov rsi,0
-	
+	mov rdi,0
+
 	encryptLoop:
-		cmp BYTE[rdi],`\0`
+		cmp BYTE[stringsIn + rdi],`\0`
 		je encryptNext
-		mov dl,[rdi]
+		mov dl,[stringsIn + rdi]
 		call superXOR
-		mov [rdi],al
-		add rdi,1
-		add rsi,1
+		mov [stringsPlusOne + rdi + 1],al	;In the new buffer, put an empty 
+		add rdi,1								;byte right at the beginning.
 	jmp encryptLoop
 
 	encryptNext:
-		mov r10,rdi
-		moveUp:
-			cmp rdi,strings
-			je storeLength
-			mov r9b,[rdi]
-			mov r9b,[rdi+1]
-			sub rdi,1
-		jmp moveUp
-
-		storeLength:
-			mov rdi,r10
-			mov [strings],sil
+		mov [stringsPlusOne],dil			;Put the length of the message in that empty byte
 	
-		garbage:
-			cmp rsi,1023
+		garbage:							;Make everything after the message random junk
+			cmp rdi,1023
 			je encryptEnd
 			rdtsc
 			mov rcx,rax
 			call srand
 			call rand
-			xor [rdi],al
+			xor [stringsPlusOne + rdi + 1],al
 			add rdi,1
-			add rsi,1
 		jmp garbage
 
 	encryptEnd:
-		pop rsi
 		pop rdi
 		ret
 ;end encrypt ----------------------------------------;
@@ -272,36 +260,30 @@ encrypt:
 decrypt:
 	push rdi
 	push rsi
-	mov rdi,strings
-	add rdi,1
 	mov rsi,0
+	xor rdi,rdi
+	mov dil,[stringsIn]
 
 	decryptLoop:
-		cmp sil,[strings]
+		cmp sil,[stringsIn]
 		je decryptNext
-		mov dl,[rdi]
+		mov dl,[stringsIn + rsi + 1]
 		call superXOR
-		mov [rdi],al
-		add rdi,1
-		add rsi,1
-	jmp decryptLoop
+		mov [stringsPlusOne + rsi],al		;Now that the size of the message
+		add rsi,1								;is in memory, we can get rid
+	jmp decryptLoop								;of that extra byte at the beginning.
 
 	decryptNext:
-		mov sil,[strings]
-		add rsi,1
-		mov rdi,strings
-		add rdi,rsi
-
-		zeroBytes:
-			cmp rsi,1023
+		
+		zeroBytes:							;Get rid of the random junk from the encryption.
+			cmp rdi,1023
 			je decryptEnd
-			mov BYTE[rdi],0
+			mov BYTE[stringsPlusOne + rdi],0
 			add rdi,1
 			add rsi,1
 		jmp zeroBytes
 
 	decryptEnd:
-		mov BYTE[strings],0
 		pop rsi
 		pop rdi
 		ret
@@ -312,11 +294,14 @@ decrypt:
 
 section .data
 
-strings:
+stringsIn:
 	times 1024 db `\0`
 
-cushion:
-	db `\0`
+stringsPlusOne:
+	times 1024 db `\0`
+
+currentChar:
+	db 0
 
 stringFormat:
 	db '%s ',0
@@ -327,9 +312,6 @@ intFormat:
 hexFormat:
 	db '%x ',0
 
-currentChar:
-	db 0
 
-endOfMessage:
-	dd 0
+
 
