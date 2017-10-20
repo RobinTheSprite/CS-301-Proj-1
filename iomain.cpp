@@ -33,6 +33,7 @@ void microsoftWhy()
 	fprintf(nonsense, "%i", moreNonsense);
 }
 
+
 int castPasswordToInt(string password)
 {
 	int iPassword = 0;
@@ -51,11 +52,76 @@ int main()
 	cout << endl;
 	cout << "Thanks, NASM, for making me value actual programming languages." << endl;
 	cout << endl;
+	cout << "Enter a blank line at any time to exit." << endl;
+	cout << endl;
 
-	string line;
+	string line; //Password input
+	string filename; //File name input
+	bool encryptSelected = false; //Check for encryption or decryption
+
 	while (1)
 	{
-		cout << "Enter a Password or Press Enter to Exit: ";
+		cout << "Encrypt or Decrypt: ";
+		getline(cin, line);
+		if (!cin)
+		{
+			cout << "Error readling input" << endl;
+			continue;
+		}
+		else if (line == "")
+		{
+			return 0;
+		}
+		else if (line == "encrypt")
+		{
+			encryptSelected = true;
+		}
+		else if (line == "decrypt")
+		{
+			cout << endl;
+			break;
+		}
+		else
+		{
+			cout << "Not valid input" << endl;
+			continue;
+		}
+		cout << endl;
+		break;
+	}
+
+	while (1)
+	{
+		cout << "Enter the name of the file you wish to operate on: ";
+		getline(cin, filename);
+		if (!cin)
+		{
+			cout << "Error readling input" << endl;
+			continue;
+		}
+		if (line == "")
+		{
+			return 0;
+		}
+
+		const char * cstrFilename = filename.c_str();
+		FILE * fptr = fopenASM(cstrFilename, "r");
+
+		if (!fptr)
+		{
+			cout << endl;
+			cout << "Not a valid file name" << endl;
+			continue;
+		}
+		
+		fcloseASM(fptr);
+		cout << endl;
+		break;
+	}
+
+	while (1)
+	{
+		cout << "Enter a Password: ";
 		getline(cin, line);
 		if (!cin)
 		{
@@ -70,48 +136,35 @@ int main()
 		break;
 	}
 	
-	FILE * fptr = fopenASM("encrypted.txt", "r");
+	const char * cstrFilename = filename.c_str();
+	FILE * fptr = fopenASM(cstrFilename, "r");
 	if (!fptr)
 	{
 		cout << "Error Reading File" << endl;
+		return 1;
 	}
-
-	const char * memory = readFromText(fptr);
-	std::cout << "Text File Read" << std::endl;
+	readFromText(fptr);
+	std::cout << "File Read" << std::endl;
 	std::cout << std::endl;
 	fcloseASM(fptr);
 
-	//encrypt(castPasswordToInt(line));
-	decrypt(castPasswordToInt(line));
-
-	FILE * fptrWrite = fopenASM("text_output.txt", "w");
+	if (encryptSelected)
+	{
+		encrypt(castPasswordToInt(line));
+	}
+	else
+	{
+		decrypt(castPasswordToInt(line));
+	}
+	
+	FILE * fptrWrite = fopenASM("output.txt", "w");
 	if (!fptrWrite)
 	{
-		cout << "Error Reading File" << endl;
+		cout << "Error Writing File" << endl;
+		return 1;
 	}
 	writeToText(fptrWrite);
 	fcloseASM(fptrWrite);
-
-	FILE * bptr = fopenASM("encrypted.bin", "r");
-	std::cout << "Bin File Read";
-	readFromBin(bptr);
-	if (!bptr)
-	{
-		cout << "Error Reading File" << endl;
-	}
-	std::cout << std::endl;
-	fcloseASM(bptr);
-
-	//encrypt(castPasswordToInt(line));
-	decrypt(castPasswordToInt(line));
-	
-	FILE * bptrWrite = fopenASM("bin_output.bin", "w");
-	if (!bptrWrite)
-	{
-		cout << "Error Reading File" << endl;
-	}
-	writeToBin(bptrWrite);
-	fcloseASM(bptrWrite);
 
 	std::cout << std::endl;
 	std::cout << "Press ENTER to exit" << std::endl;
