@@ -21,3 +21,12 @@ Its operation goes something like this:
 For your convenience, I have included the files strings.txt and strings_in_disguise.bin as
 plaintext files, and encrypted.txt and .bin as encrypted files using "qw" as a password. Feel
 Free to write your own files and experiment.
+
+Known Flaws:
+	-output.txt seems to occaisionally have trouble decrypting itself
+
+	-passwords are the length of int, and are COMBINATIVE, not PERMUTATIVE.
+	 this means "qw" is the same as "wq." There seem to be some weird exceptions
+	 to this, but for the most part this is true.
+	
+	-File input could probably be done with a single function, if fgetc is used for both.

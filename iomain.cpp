@@ -22,7 +22,9 @@ extern "C" void writeToBin(FILE *);
 extern "C" void encrypt(int);
 extern "C" void decrypt(int);
 
-void microsoftWhy()
+//Tells the .asm that yes, it is okay to use these functions.
+//You have Microsoft™ 's permission.
+void microsoft™Why()
 {
 	FILE * nonsense = nullptr;
 	int moreNonsense = 0;
@@ -33,7 +35,9 @@ void microsoftWhy()
 	fprintf(nonsense, "%i", moreNonsense);
 }
 
-
+//castPasswordToInt
+//Turn the string that the user put in into a series of bytes.
+//Because int is 4 bytes, the password can only be 4 characters.
 int castPasswordToInt(string password)
 {
 	int iPassword = 0;
@@ -59,7 +63,7 @@ int main()
 	string filename; //File name input
 	bool encryptSelected = false; //Check for encryption or decryption
 
-	while (1)
+	while (1) //Get the user's preference: encrypt or decrypt
 	{
 		cout << "Encrypt or Decrypt: ";
 		getline(cin, line);
@@ -90,7 +94,7 @@ int main()
 		break;
 	}
 
-	while (1)
+	while (1) //Get the filename that the user wants to use
 	{
 		cout << "Enter the name of the file you wish to operate on: ";
 		getline(cin, filename);
@@ -107,7 +111,7 @@ int main()
 		const char * cstrFilename = filename.c_str();
 		FILE * fptr = fopenASM(cstrFilename, "r");
 
-		if (!fptr)
+		if (!fptr)	//Was there actually a file by that name?
 		{
 			cout << endl;
 			cout << "Not a valid file name" << endl;
@@ -119,7 +123,7 @@ int main()
 		break;
 	}
 
-	while (1)
+	while (1)	//Get the user's password
 	{
 		cout << "Enter a Password: ";
 		getline(cin, line);
@@ -136,6 +140,7 @@ int main()
 		break;
 	}
 	
+	//Open file and read it in
 	const char * cstrFilename = filename.c_str();
 	FILE * fptr = fopenASM(cstrFilename, "r");
 	if (!fptr)
@@ -146,8 +151,9 @@ int main()
 	readFromText(fptr);
 	std::cout << "File Read" << std::endl;
 	std::cout << std::endl;
-	fcloseASM(fptr);
+	fcloseASM(fptr); 
 
+	//What did the user want to do?
 	if (encryptSelected)
 	{
 		encrypt(castPasswordToInt(line));
@@ -157,6 +163,7 @@ int main()
 		decrypt(castPasswordToInt(line));
 	}
 	
+	//Write to output file
 	FILE * fptrWrite = fopenASM("output.txt", "w");
 	if (!fptrWrite)
 	{
