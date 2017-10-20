@@ -70,8 +70,8 @@ fwriteASM:
 readFromText:	
 	push rsi
 	push rdi
+	mov rdi,0
 	mov rsi,rcx				
-	mov rdi,stringsIn
 
 	readTextLoop:		
 		mov rcx,rsi
@@ -83,19 +83,19 @@ readFromText:
 
 		mov rcx,rsi
 		call fgetc
-		mov [rdi],al
+		mov [stringsIn + rdi],al
 		add rdi,1
 	jmp readTextLoop
 
 	readFromTextEnd:
 		;Manually clear the end of file integer out of memory 
-		mov BYTE[rdi],0
+		mov BYTE[stringsIn + rdi],0
 		add rdi,1
-		mov BYTE[rdi],0
+		mov BYTE[stringsIn + rdi],0
 		add rdi,1
-		mov BYTE[rdi],0
+		mov BYTE[stringsIn + rdi],0
 		sub rdi,3
-		mov BYTE[rdi],0
+		mov BYTE[stringsIn + rdi],0
 
 		pop rdi
 		pop rsi
@@ -108,11 +108,11 @@ readFromText:
 readFromBin:			
 	push rdi
 	push rsi
-	mov rdi,rcx
-	mov rsi,0
+	mov rsi,rcx
+	mov rdi,0
 
 	readBinLoop:
-		mov r9,rdi
+		mov r9,rsi
 		mov r8,1
 		mov rdx,1
 		mov rcx,currentChar
@@ -120,7 +120,7 @@ readFromBin:
 		call fread					
 		add rsp,40
 
-		mov rcx,rdi
+		mov rcx,rsi
 		sub rsp,40
 		call feof				
 		add rsp,40
@@ -128,8 +128,8 @@ readFromBin:
 		jne readFromBinEnd		
 
 		mov rcx,[currentChar]
-		mov [stringsIn + rsi], cl	;Put the byte into memory
-		add rsi,1
+		mov [stringsIn + rdi], cl	;Put the byte into memory
+		add rdi,1
 		
 	jmp readBinLoop
 
@@ -177,19 +177,19 @@ writeToBin:
 	push rdi
 	push rsi
 	push r13
-	mov rdi,rcx
-	mov rsi,stringsPlusOne
+	mov rsi,rcx
+	mov rdi,stringsPlusOne
 	mov r13,0
 
 	writeBinLoop:
-		mov r9,rdi
+		mov r9,rsi
 		mov r8,1
 		mov rdx,1
-		mov rcx,rsi
+		mov rcx,rdi
 		cmp r13,1024
 		je writeToBinEnd
 		call fwriteASM
-		add rsi,1
+		add rdi,1
 		add r13,1
 	jmp writeBinLoop
 
@@ -210,7 +210,7 @@ superXOR:
 		je superEnd
 		mov r9,rcx
 		and r9,0xFF		;Extract low bits of password
-		xor rdx,r9		
+		xor dl,r9b		
 		shr rcx,8		;Get new byte into lowest position
 	jmp superLoop
 

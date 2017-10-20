@@ -52,16 +52,24 @@ int main()
 	cout << "Thanks, NASM, for making me value actual programming languages." << endl;
 	cout << endl;
 
-	cout << "Enter a Password: ";
 	string line;
-	getline(cin, line);
-	if (!cin)
+	while (1)
 	{
-		cout << "Error readling input" << endl;
-		return 1;
+		cout << "Enter a Password or Press Enter to Exit: ";
+		getline(cin, line);
+		if (!cin)
+		{
+			cout << "Error readling input" << endl;
+			continue;
+		}
+		if (line == "")
+		{
+			return 0;
+		}
+		cout << endl;
+		break;
 	}
-	cout << endl;
-
+	
 	FILE * fptr = fopenASM("encrypted.txt", "r");
 	if (!fptr)
 	{
